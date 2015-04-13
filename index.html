@@ -1,0 +1,111 @@
+<html>
+
+	<head>
+
+		<style>
+
+			body { margin: 0; }
+
+		</style>
+
+		<script src="assets/js/three.js"></script>
+		<script src="assets/js/OclussionThresholdInline.js"></script>
+		
+	</head>
+
+	<body>
+		<div></div>
+	</body>
+
+	<script>
+
+		models = [];
+
+		scene = new THREE.Scene();
+	    camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 1, 1000000);
+	    camera.position.z = 15000;
+	    camera.position.y = 5000;
+	    camera.position.x = 5000;
+
+	    camera.update
+
+	    camera.far = 10000;
+	    camera.updateProjectionMatrix ();
+
+	    OT = OT.init(camera, scene, 24);
+
+		loader = new THREE.JSONLoader();
+	    objectLoader = new THREE.ObjectLoader();
+
+	    var renderer = new THREE.WebGLRenderer();
+	    renderer.setClearColor( 0xffffff, 1);
+	    renderer.setSize(window.innerWidth, window.innerHeight);
+	    document.body.appendChild(renderer.domElement);
+
+	    var light = new THREE.AmbientLight( 0x888888 ); // soft white light
+		scene.add( light );
+
+		var directionalLight = new THREE.DirectionalLight( 0xAAAAAA, 1 );
+		directionalLight.position.set( 0, 1, 0 );
+		scene.add( directionalLight );
+
+		var pointLight = new THREE.PointLight( 0xffffff, 1, 200 );
+		camera.add(pointLight);
+		
+		loader.load( "assets/models/smallCube.json", function (geometry, materials ) {
+			var date1 = new Date();
+			var time = 0;
+			var i = 10000;
+			do {
+			 	var material = new THREE.MeshFaceMaterial( materials );
+		        mainLayer = new THREE.Mesh( geometry, material );
+		        mainLayer.position.z = Math.floor((Math.random() * 10000));
+		        mainLayer.position.x = Math.floor((Math.random() * 10000) + 0);
+		        mainLayer.position.y = Math.floor((Math.random() * 10000) + 0);
+		        scene.add( mainLayer );
+		        OT.occlude(mainLayer, mainLayer);
+		        models.push(mainLayer);
+			} while(--i);
+	    });	
+
+	    var render = function () { 
+	        requestAnimationFrame(render);
+	        renderer.render(scene, camera);
+	    };
+
+	    document.addEventListener ('mouseup', function (evt) {
+	    	e = evt || window.event;
+            button = e.which || e.button;
+            e.preventDefault();
+            e.stopPropagation();
+            if (button == 1) {
+            	var index = Math.floor((Math.random() * 20) + 10);
+                alert("Oclussion Index set to " + index + "px");
+
+                OT.setMargin(index);
+                OT.cameraCalculation ();
+
+		        try {
+		            if (models.length) {
+		                var m = models.slice();
+		                var j = m.length - 1;
+		                
+		                time = 0;
+
+		                do {
+	                        time += OT.isObjectVisible(m[j], m[j]);
+		                } while(--j > -1);
+
+		                console.log (time + " Sec for " + models.length + " Objects" );
+		            }
+		        } catch (e) {
+		            console.log (e.stack);
+		        }
+            }
+	    });
+
+	    render ();
+
+	</script>
+
+</html>
